@@ -16,6 +16,21 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: resume_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
 
       - name: Checkout Repository
@@ -32,6 +47,16 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Unit Tests
+        env:
+          APP_NAME: "AI Resume Analyzer"
+          APP_ENV: "testing"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
+          JWT_SECRET_KEY: "test-secret-key"
+          JWT_ALGORITHM: "HS256"
+          REDIS_URL: "redis://localhost:6379/0"
+          OPENAI_API_KEY: "test-key"
+          GEMINI_API_KEY: "test-key"
+          OLLAMA_HOST: "http://localhost:11434"
         run: |
           pytest -v
 

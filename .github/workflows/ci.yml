@@ -45,12 +45,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
+          - name: Check Environment
+            env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5434/resume_db"
+        run: |
+        echo "DATABASE_URL=$DATABASE_URL"
       - name: Run Database Migrations
         env:
           APP_NAME: "AI Resume Analyzer"
           APP_ENV: "testing"
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5434/resume_db"
           JWT_SECRET_KEY: "test-secret-key"
           JWT_ALGORITHM: "HS256"
           REDIS_URL: "redis://localhost:6379/0"
@@ -64,7 +68,7 @@ jobs:
         env:
             APP_NAME: "AI Resume Analyzer"
             APP_ENV: "testing"
-            DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
+            DATABASE_URL: "postgresql://postgres:postgres@localhost:5434/resume_db"
             JWT_SECRET_KEY: "test-secret-key"
             JWT_ALGORITHM: "HS256"
             REDIS_URL: "redis://localhost:6379/0"

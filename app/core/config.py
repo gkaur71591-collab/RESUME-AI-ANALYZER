@@ -12,8 +12,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     GEMINI_API_KEY: str
     OLLAMA_HOST: str
-    class Config:
+    model_config = SettingsConfigDict(
         env_file=".env.dev",
-        case_sensitive = True
+        case_sensitive=True
+    )
 
 settings = Settings()

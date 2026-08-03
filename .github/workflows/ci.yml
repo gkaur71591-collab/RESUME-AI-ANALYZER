@@ -1,5 +1,10 @@
 name: FastAPI CI
 
+permissions:
+  contents: read
+  packages: write
+
+
 on:
   push:
     branches:
@@ -17,7 +22,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+
     services:
+
       postgres:
         image: postgres:16
 
@@ -36,10 +43,13 @@ jobs:
           --health-retries 5
 
 
+
     steps:
+
 
       - name: Checkout Repository
         uses: actions/checkout@v4
+
 
 
       - name: Setup Python
@@ -48,29 +58,28 @@ jobs:
           python-version: "3.11"
 
 
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
 
-      - name: Debug Database Connection
+
+      - name: Check Database Connection
+
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
-        run: |
-          echo "Database URL: $DATABASE_URL"
+          PGPASSWORD: postgres
 
-
-      - name: Wait for PostgreSQL
         run: |
-          until pg_isready -h localhost -p 5432; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
+          psql -h localhost -U postgres -d resume_db -c "\dt"
+
 
 
       - name: Run Database Migrations
+
         env:
+
           APP_NAME: "AI Resume Analyzer"
           APP_ENV: "testing"
 
@@ -78,41 +87,91 @@ jobs:
 
           JWT_SECRET_KEY: "test-secret-key"
           JWT_ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
 
           REDIS_URL: "redis://localhost:6379/0"
 
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_MODEL: "gpt-4.1-mini"
+          OPENAI_API_KEY: "test"
+
+          GEMINI_API_KEY: "test"
 
           OLLAMA_HOST: "http://localhost:11434"
+
 
         run: |
           alembic upgrade head
 
 
+
+
       - name: Run Unit Tests
+
         env:
+
           APP_NAME: "AI Resume Analyzer"
           APP_ENV: "testing"
 
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
 
           JWT_SECRET_KEY: "test-secret-key"
+
           JWT_ALGORITHM: "HS256"
+
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
 
           REDIS_URL: "redis://localhost:6379/0"
 
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_MODEL: "gpt-4.1-mini"
+
+          OPENAI_API_KEY: "test"
+
+          GEMINI_API_KEY: "test"
 
           OLLAMA_HOST: "http://localhost:11434"
+
 
         run: |
           pytest -v
 
 
-      - name: Build Production Docker Image
-        run: |
-          docker build \
-            -f Dockerfile.prod \
-            -t resume-api:${{ github.sha }} .
+
+      # -------------------------------
+      # Docker Build and Push to GHCR
+      # -------------------------------
+
+
+      - name: Login to GitHub Container Registry
+
+        uses: docker/login-action@v3
+
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+      - name: Setup Docker Buildx
+
+        uses: docker/setup-buildx-action@v3
+
+
+
+      - name: Build and Push Docker Image
+
+        uses: docker/build-push-action@v6
+
+        with:
+
+          context: .
+
+          file: Dockerfile.prod
+
+          push: true
+
+          tags: |
+
+            ghcr.io/${{ github.repository_owner }}/resume-api:latest
+
+            ghcr.io/${{ github.repository_owner }}/resume-api:${{ github.sha }}

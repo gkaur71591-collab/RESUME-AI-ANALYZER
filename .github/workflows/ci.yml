@@ -58,8 +58,8 @@ jobs:
           JWT_SECRET_KEY: "test-secret-key"
           JWT_ALGORITHM: "HS256"
           REDIS_URL: "redis://localhost:6379/0"
-          OPENAI_API_KEY: "test-key"
-          GEMINI_API_KEY: "test-key"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OLLAMA_HOST: "http://localhost:11434"
         run: |
           alembic upgrade head
@@ -72,8 +72,8 @@ jobs:
             JWT_SECRET_KEY: "test-secret-key"
             JWT_ALGORITHM: "HS256"
             REDIS_URL: "redis://localhost:6379/0"
-            OPENAI_API_KEY: "test-key"
-            GEMINI_API_KEY: "test-key"
+            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
             OLLAMA_HOST: "http://localhost:11434"
         run: |
           pytest -v

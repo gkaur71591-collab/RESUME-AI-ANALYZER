@@ -1,0 +1,11 @@
+# Environment files
+.env
+.env.dev
+.env.prod
+
+# Python
+__pycache__/
+*.pyc
+
+# Docker
+postgres_data/

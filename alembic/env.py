@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv(".env.dev")
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -17,7 +21,6 @@ from app.models.job_match import JobMatch
 config = context.config
 
 
-# Override alembic.ini database URL with environment variable
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
@@ -49,6 +52,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+
 def run_migrations_online() -> None:
 
     connectable = engine_from_config(
@@ -70,8 +74,8 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
+
 if context.is_offline_mode():
     run_migrations_offline()
-
 else:
     run_migrations_online()

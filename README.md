@@ -4,7 +4,7 @@ A production-ready **AI Resume Analyzer** built with **FastAPI**, **Ollama Local
 
 The application allows users to securely upload resumes, analyze resume quality, compare resumes with job descriptions, identify skill gaps, and generate AI-powered recommendations.
 
-The project follows modern backend engineering practices including authentication, authorization, testing, logging, exception handling, rate limiting, containerization, CI automation, and environment-based configuration.
+The project follows modern backend engineering practices including authentication, authorization, testing, logging, exception handling, rate limiting, containerization, CI/CD automation, and environment-based configuration.
 
 ---
 
@@ -36,7 +36,7 @@ The project follows modern backend engineering practices including authenticatio
 
 ---
 
-## RAG (Retrieval Augmented Generation)
+# 🧠 RAG (Retrieval Augmented Generation)
 
 The application uses RAG architecture to provide context-aware AI responses.
 
@@ -126,6 +126,7 @@ RAG Components:
 * Docker
 * Docker Compose
 * GitHub Actions
+* GitHub Container Registry
 * Render
 
 ## Testing
@@ -195,6 +196,7 @@ AI-RESUME-ANALYZER
 │       └── ci.yml
 │
 ├── Dockerfile
+├── Dockerfile.prod
 ├── docker-compose.yml
 ├── requirements.txt
 ├── .env.development
@@ -223,8 +225,6 @@ Used for:
 * Local Ollama
 * Debug logging
 * Development secrets
-
----
 
 ## Production Environment
 
@@ -257,11 +257,9 @@ ALGORITHM=HS256
 
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-
 REDIS_URL=redis://localhost:6379
 
-
-OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_HOST=http://localhost:11434
 
 OLLAMA_MODEL=llama3.1
 ```
@@ -305,13 +303,13 @@ http://localhost:11434
 Clone repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/AI-RESUME-ANALYZER.git
+git clone https://github.com/gkaur71591-collab/RESUME-AI-ANALYZER.git
 ```
 
 Go inside project:
 
 ```bash
-cd AI-RESUME-ANALYZER
+cd RESUME-AI-ANALYZER
 ```
 
 Create virtual environment:
@@ -328,7 +326,7 @@ Windows:
 venv\Scripts\activate
 ```
 
-Install packages:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -353,87 +351,106 @@ http://localhost:8000/docs
 ReDoc:
 
 ```text
-http://localhost:8000/redoc
-```
-
----
 
 # 🐳 Docker Setup
 
-Build image:
+The application is fully containerized using Docker.
+
+## Build Docker Image
 
 ```bash
 docker build -t resume-analyzer .
 ```
 
-Run container:
+## Run Docker Container
 
 ```bash
 docker run -p 8000:8000 resume-analyzer
 ```
 
-Using Docker Compose:
+## Run With Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-Stop:
+## Stop Containers
 
 ```bash
 docker compose down
 ```
 
+Docker Compose manages:
+
+* FastAPI application
+* PostgreSQL database
+* Redis
+* Celery worker
+* Supporting services
+
 ---
 
 # ❤️ Health Check
 
-Endpoint:
+Health endpoint:
 
 ```http
 GET /health
 ```
 
-Example:
+Example response:
 
 ```json
 {
- "status":"healthy",
- "database":"connected",
- "redis":"connected",
- "ollama":"connected"
+  "status": "healthy",
+  "database": "connected",
+  "redis": "connected",
+  "ollama": "connected"
 }
 ```
 
-Docker Compose also includes container health checks.
+Health checks validate:
+
+* Application availability
+* Database connectivity
+* Redis connectivity
+* Ollama availability
+
+Docker Compose also includes service health checks.
 
 ---
 
 # ⚡ Celery Background Processing
 
-Celery handles long-running tasks.
+Celery is used for asynchronous background processing.
 
 Used for:
 
 * Resume processing
 * AI analysis
 * Report generation
-* Email notifications
+* Long-running tasks
 
 Architecture:
 
 ```text
 FastAPI
-   |
-   |
-Redis Broker
-   |
-   |
-Celery Worker
-   |
-   |
-Background Task
+    |
+    |
+ Redis Broker
+    |
+    |
+ Celery Worker
+    |
+    |
+ Background Tasks
 ```
+
+Benefits:
+
+* Faster API responses
+* Better scalability
+* Handles resource-intensive operations asynchronously
 
 ---
 
@@ -441,11 +458,11 @@ Background Task
 
 ## Global Exception Handling
 
-Implemented custom exception handlers for:
+Custom exception handlers are implemented for:
 
 * HTTP Exceptions
 * Validation Errors
-* Database Errors
+* Database Exceptions
 * Internal Server Errors
 
 Benefits:
@@ -453,10 +470,11 @@ Benefits:
 * Consistent API responses
 * Better debugging
 * Improved reliability
+* Centralized error management
 
 ---
 
-## Logging
+## Application Logging
 
 Centralized logging captures:
 
@@ -465,6 +483,12 @@ Centralized logging captures:
 * Exceptions
 * Background tasks
 * Startup/shutdown events
+
+Logging helps with:
+
+* Debugging
+* Monitoring
+* Production troubleshooting
 
 ---
 
@@ -478,24 +502,32 @@ Rate limiting protects APIs from:
 
 Implemented for sensitive endpoints:
 
-* Login
-* Registration
+* Authentication APIs
+* Registration APIs
 * AI processing APIs
+
+Benefits:
+
+* Improved security
+* Better resource management
+* Protection against malicious requests
 
 ---
 
 # 🧪 Testing
 
-Testing framework:
+The project includes automated tests using:
 
 * pytest
 * FastAPI TestClient
 
-Covered:
+## Test Coverage
+
+Covered scenarios:
 
 * User Registration
-* Login
-* JWT Token Creation
+* User Login
+* JWT Token Generation
 * Invalid Credentials
 * Protected Routes
 * Health API
@@ -506,13 +538,13 @@ Run tests:
 pytest
 ```
 
-Verbose:
+Run with verbose output:
 
 ```bash
 pytest -v
 ```
 
-Coverage:
+Generate coverage:
 
 ```bash
 pytest --cov=app
@@ -520,26 +552,111 @@ pytest --cov=app
 
 ---
 
-# 🔄 GitHub Actions CI
+# 🔄 CI/CD Pipeline
 
-CI workflow:
+The project implements a complete automated CI/CD pipeline using **GitHub Actions**.
+
+The pipeline automates testing, Docker image creation, security scanning, and deployment.
+
+## CI/CD Workflow
 
 ```text
-.github/workflows/ci.yml
+Developer
+    |
+    |
+Git Push / Pull Request
+    |
+    |
+GitHub Actions
+    |
+    |
+PostgreSQL Test Container
+    |
+    |
+Database Connection Validation
+    |
+    |
+Alembic Migration Testing
+    |
+    |
+Pytest Automation
+    |
+    |
+Docker Image Build
+    |
+    |
+Push Image to GitHub Container Registry
+(GHCR)
+    |
+    |
+Docker Security Scan
+(Trivy)
+    |
+    |
+Render Deployment Trigger
+    |
+    |
+Production Environment
 ```
 
-Pipeline:
+---
 
-* Checkout Code
-* Setup Python
-* Install Dependencies
-* Run Tests
-* Validate Application
+# Continuous Integration (CI)
 
-Triggered on:
+The CI pipeline performs:
 
-* Push
-* Pull Requests
+* Repository checkout
+* Python 3.11 setup
+* Dependency installation
+* PostgreSQL 16 test database startup
+* Database connection validation
+* Alembic migration validation
+* Automated unit testing
+
+Technologies:
+
+* GitHub Actions
+* PostgreSQL Service Container
+* pytest
+* Alembic
+
+---
+
+# Continuous Deployment (CD)
+
+The deployment pipeline performs:
+
+* Production Docker image build
+* Docker image publishing to GHCR
+* Vulnerability scanning using Trivy
+* Automated Render deployment
+
+Technologies:
+
+* Docker Buildx
+* GitHub Container Registry
+* Trivy Security Scanner
+* Render Deploy Hooks
+
+---
+
+# GitHub Actions Workflow
+
+Location:
+
+```text
+.github/
+
+└── workflows/
+
+    └── ci.yml
+```
+
+Pipeline triggers:
+
+* Push to main branch
+* Push to master branch
+* Pull requests
 
 ---
 
@@ -553,41 +670,78 @@ Supported platforms:
 * AWS
 * Azure
 * Railway
-* Google Cloud
+* Google Cloud Platform
 
 Production deployment requires:
 
-* Database URL
-* Redis URL
+* PostgreSQL database URL
+* Redis connection URL
 * Environment variables
-* Ollama hosted separately or cloud LLM provider
+* Secret keys
+* Ollama hosted separately or managed LLM provider
+
+Deployment process:
+
+```text
+GitHub Repository
+        |
+        |
+GitHub Actions
+        |
+        |
+Docker Image
+        |
+        |
+GitHub Container Registry
+        |
+        |
+Render Deployment
+        |
+        |
+Production API
+```
 
 ---
 
+# 🔐 Production Considerations
+
+Implemented production practices:
+
+* Environment-based configuration
+* JWT authentication
+* Secure password hashing
+* API rate limiting
+* Database migrations
+* Health monitoring
+* Containerization
+* Automated testing
+* CI/CD automation
+
+---
 
 # 🤝 Contribution
 
-1. Fork repository
+1. Fork the repository
 
-2. Create branch
+2. Create a feature branch:
 
 ```bash
 git checkout -b feature/new-feature
 ```
 
-3. Commit changes
+3. Commit changes:
 
 ```bash
-git commit -m "Add feature"
+git commit -m "Add new feature"
 ```
 
-4. Push changes
+4. Push changes:
 
 ```bash
 git push origin feature/new-feature
 ```
 
-5. Create Pull Request
+5. Create a Pull Request
 
 ---
 
@@ -597,31 +751,40 @@ git push origin feature/new-feature
 
 Senior Backend Engineer | AI Engineering
 
-Skills:
+## Skills
 
 * Python
 * FastAPI
 * PostgreSQL
+* SQLAlchemy
 * Redis
 * Celery
 * Docker
-* JWT
+* JWT Authentication
 * LangChain
 * Ollama
 * RAG
-* CI/CD
 * REST APIs
+* CI/CD
+* Cloud Deployment
 
 GitHub:
 
-https://github.com/YOUR_USERNAME
+```text
+https://github.com/gkaur71591-collab
+```
 
 LinkedIn:
 
+```text
 https://linkedin.com/in/YOUR_PROFILE
+```
 
 ---
 
 # 📄 License
 
 MIT License
+
+http://localhost:8000/redoc
+```

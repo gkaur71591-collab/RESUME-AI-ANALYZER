@@ -62,3 +62,9 @@ def home():
     return {
         "message": "AI Resume Analyzer API running"
     }
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "AI Resume Analyzer"
+    }

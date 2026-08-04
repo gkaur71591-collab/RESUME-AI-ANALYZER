@@ -1,9 +1,8 @@
-name: FastAPI CI
+name: FastAPI CI/CD
 
 permissions:
   contents: read
   packages: write
-
 
 on:
   push:
@@ -18,7 +17,10 @@ on:
 
 
 jobs:
+
   test:
+
+    name: Run Tests
 
     runs-on: ubuntu-latest
 
@@ -43,13 +45,10 @@ jobs:
           --health-retries 5
 
 
-
     steps:
-
 
       - name: Checkout Repository
         uses: actions/checkout@v4
-
 
 
       - name: Setup Python
@@ -58,16 +57,13 @@ jobs:
           python-version: "3.11"
 
 
-
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
 
-
       - name: Check Database Connection
-
         env:
           PGPASSWORD: postgres
 
@@ -75,70 +71,57 @@ jobs:
           psql -h localhost -U postgres -d resume_db -c "\dt"
 
 
-
       - name: Run Database Migrations
-
         env:
-
           APP_NAME: "AI Resume Analyzer"
           APP_ENV: "testing"
-
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
-
           JWT_SECRET_KEY: "test-secret-key"
           JWT_ALGORITHM: "HS256"
           ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-
           REDIS_URL: "redis://localhost:6379/0"
-
           OPENAI_MODEL: "gpt-4.1-mini"
           OPENAI_API_KEY: "test"
-
           GEMINI_API_KEY: "test"
-
           OLLAMA_HOST: "http://localhost:11434"
-
 
         run: |
           alembic upgrade head
 
 
-
-
       - name: Run Unit Tests
 
         env:
-
           APP_NAME: "AI Resume Analyzer"
           APP_ENV: "testing"
-
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/resume_db"
-
           JWT_SECRET_KEY: "test-secret-key"
-
           JWT_ALGORITHM: "HS256"
-
           ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-
           REDIS_URL: "redis://localhost:6379/0"
-
           OPENAI_MODEL: "gpt-4.1-mini"
-
           OPENAI_API_KEY: "test"
-
           GEMINI_API_KEY: "test"
-
           OLLAMA_HOST: "http://localhost:11434"
-
 
         run: |
           pytest -v
 
 
 
-      # -------------------------------
-      # Docker Build and Push to GHCR
-      # -------------------------------
+  docker:
+
+    name: Build and Push Docker Image
+
+    needs: test
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
 
       - name: Login to GitHub Container Registry
@@ -151,11 +134,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
-
       - name: Setup Docker Buildx
 
         uses: docker/setup-buildx-action@v3
-
 
 
       - name: Build and Push Docker Image
@@ -163,15 +144,49 @@ jobs:
         uses: docker/build-push-action@v6
 
         with:
-
           context: .
-
           file: Dockerfile.prod
-
           push: true
 
           tags: |
-
             ghcr.io/${{ github.repository_owner }}/resume-api:latest
-
             ghcr.io/${{ github.repository_owner }}/resume-api:${{ github.sha }}
+
+
+
+  security:
+
+    name: Security Scan
+
+    needs: docker
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Scan Docker Image
+
+        uses: aquasecurity/trivy-action@master
+
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/resume-api:${{ github.sha }}
+          severity: HIGH,CRITICAL
+
+
+
+  deploy:
+
+    name: Deploy Production
+
+    needs: security
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Deploy to Render
+
+        run: |
+          curl "${{ secrets.RENDER_DEPLOY_HOOK }}"

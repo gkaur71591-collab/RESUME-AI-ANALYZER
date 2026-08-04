@@ -564,18 +564,6 @@ Production deployment requires:
 
 ---
 
-# 🔮 Future Enhancements
-
-* ATS Resume Score
-* Interview Question Generator
-* AI Career Assistant
-* Resume Version Management
-* Admin Dashboard
-* Analytics Dashboard
-* Email Notifications
-* Kubernetes Deployment
-
----
 
 # 🤝 Contribution
 
